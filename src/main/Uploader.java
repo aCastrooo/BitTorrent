@@ -1,10 +1,24 @@
+/**
+ * ****************************************************
+ * ****************************************************
+ *
+ * RUBT - Rutgers BitTorrent Client 
+ * Phase 3
+ * CS352 - Internet Technology
+ *
+ * @authors Anthony Castronuovo, Jake Taubner
+ *
+ * ****************************************************
+ * ****************************************************
+ */
+
 package main;
 
-import java.io.FileOutputStream;
-import java.util.ArrayList;
 
 public class Uploader implements Runnable{
 
+	//TODO: WRITE THE UPLOADER
+	
 	@Override
 	public void run() {
 		
