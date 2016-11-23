@@ -172,7 +172,7 @@ public class Peer {
 	        	System.out.println("To resume the download, type 'resume'.");
 	        	System.out.println("To end the client, type 'end'. All progress of the download will be saved.\n");
 	
-		        // While the program is paused, we do nothing
+		        // While the program is paused, we loop
 		        while(Pause.getPause()){   
 		        	
 		        	Thread.sleep(15000);
@@ -194,9 +194,8 @@ public class Peer {
 	        	startRunning(piecesPerPeer, lastPeer, threads, downloads);
 	        }    
 	        
-	        // If all pieces are downloaded, we can exit
+	        // If all pieces are downloaded, we can exit the loop, and close the program
 	        if(Downloader.checkAllPieces()){
-		        System.out.println(Downloader.checkAllPieces());
 		        p.interrupt();
 	        	Pause.setEnd(true);
 	        	joinThreads(threads);
@@ -213,6 +212,14 @@ public class Peer {
 
 
 
+    /**
+     * Starts the download threads
+     * 
+     * @param piecesPerPeer
+     * @param lastPeer
+     * @param threads
+     * @param downloads
+     */
     private static void startRunning(int piecesPerPeer, int lastPeer, ArrayList<Thread> threads, ArrayList<Downloader> downloads){
 	    // Create each downloader and begin the download in a new thread
 	    for (int i = 0; i < fastPeers.size(); ++i) {
@@ -240,18 +247,20 @@ public class Peer {
 	    }
     }
 
-
+ 
+    
+    /**
+     * Joins the threads in the threads ArrayList
+     * 
+     * @param threads
+     * @throws InterruptedException
+     */
     private static void joinThreads(ArrayList<Thread> threads) throws InterruptedException{
 	    for(int i = 0; i < threads.size(); i++){
 	    	threads.get(i).join();
 	    }
     }
-
-    
-    
-    
- 
-
+   
     
 
     /**

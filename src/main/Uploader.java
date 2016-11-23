@@ -64,11 +64,7 @@ public class Uploader implements Runnable{
 		
 	}
 	
-	
-	
-	
-	
-	
+
 	
 	public synchronized void uploadMain() throws IOException{
 		
@@ -92,6 +88,8 @@ public class Uploader implements Runnable{
 					in = client.getInputStream();
 					out = client.getOutputStream();
 				
+					// If any of the following are false, it will terminate connection with the peer
+					// Because we do not know what kind of messages they are sending
 					if(!checkAndSendHandshake(client)){
 						break;
 					}
@@ -124,7 +122,11 @@ public class Uploader implements Runnable{
 
 	
 	
-	
+	/**
+	 * Makes the thread, from this already running thread
+	 * 
+	 * @param b
+	 */
 	private synchronized void makeThread(boolean b) {
 		Uploader up = new Uploader(sock, client, b);
 		if(b){
@@ -139,13 +141,26 @@ public class Uploader implements Runnable{
 	}
 
 
+	
+	/**
+	 * Closes all the inner threads that were started by this one thread
+	 * 
+	 * @return Whether we were successful in closing all the inner threads
+	 */
 	private synchronized void closeInnerThreads(ArrayList<Thread> threads2) {
 		for(Thread thread : threads){
 			thread.interrupt();
 		}
 	}
 
-
+	
+	
+	/**
+	 * Gets the request message from the peer and verifies that it is legit
+	 * 
+	 * @param client
+	 * @return Whether we were successful in sending the appropriate message back to the peer
+	 */
 	private synchronized boolean getRequestMessage(Socket client) {
 		try {
 			in.read(incomingMessage);
@@ -186,10 +201,14 @@ public class Uploader implements Runnable{
 
 
 
-
-
-
-
+	/**
+	 * Creates the message consisting of the piece that was requested by the peer and sends it to them
+	 * 
+	 * @param i
+	 * @param o
+	 * @param pieceLength
+	 * @return Whether we were successful in sending the appropriate message back to the peer
+	 */
 	private synchronized boolean getRequestedPiece(int i, int o, int pieceLength){
 
 		// Check if we have that piece before uploading
@@ -211,7 +230,12 @@ public class Uploader implements Runnable{
 	}
 
 
-
+	
+	/**
+	 * Checks the interested message to see if it legit
+	 * 
+	 * @return Whether we were successful authenticating the interested message
+	 */
 	private synchronized boolean checkAndGetInterestedMessage(Socket client) {
 		try{
 			in.read(incomingMessage);
@@ -246,7 +270,12 @@ public class Uploader implements Runnable{
 
 
 
-
+	/**
+	 * Checks the handshake to make sure it is legit, before sending back our own handshake
+	 * 
+	 * @param client
+	 * @return Whether we were successful in sending the appropriate handshake back to the peer
+	 */
 	private synchronized boolean checkAndSendHandshake(Socket client){
 		try{
 			// Get the handshake message

@@ -61,13 +61,9 @@ public class Tracker {
             query = query + "&uploaded=" + 0;
             query = query + "&downloaded=" + 0;
 
-            System.out.println("Attempting on port: " + portNum);
-
             try {
                 // Creates the URL from the query
                 URL get = new URL(query);
-
-                System.out.println("\nConnecting with URL: \n" + get.toString() + "\n");
 
                 // Establishes the URL connection
                 HttpURLConnection connection = (HttpURLConnection) get.openConnection();
