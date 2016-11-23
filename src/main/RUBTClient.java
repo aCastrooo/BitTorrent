@@ -111,7 +111,7 @@ public class RUBTClient {
         byte[] pID = Peer.getPID();
         byte[] response = Tracker.getRequest(info, pID);
         if (response != null) {
-            System.out.println("Tracker connection successful!");
+            System.out.println("Tracker connection successful!   " + info.info_hash.array().length);
         }
         
     	if(resume){

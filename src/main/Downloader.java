@@ -46,7 +46,7 @@ public class Downloader implements Runnable {
     private static final byte PORT_ID = 9;
 
     // The protocol that is used in the handshake message
-    private static final byte[] BT_PROTOCOL = new byte[] { 'B',
+    public static final byte[] BT_PROTOCOL = new byte[] { 'B',
                                                            'i',
                                                            't',
                                                            'T',
@@ -233,7 +233,7 @@ public class Downloader implements Runnable {
      * @return handshakeMessage
      * @throws IOException
      */
-    private static byte[] handshake(TorrentInfo info) throws IOException {
+    public static byte[] handshake(TorrentInfo info) throws IOException {
 
         int i = 0;
         int count;
@@ -408,7 +408,7 @@ public class Downloader implements Runnable {
      * @return message
      * @throws IOException
      */
-    private static byte[] getMessage(InputStream fromPeer, int size) throws IOException {
+    public static byte[] getMessage(InputStream fromPeer, int size) throws IOException {
         int messageLength;
 
         // While there are still bytes to read, and they don't exceed the size of the needed response,
@@ -474,7 +474,7 @@ public class Downloader implements Runnable {
      * @param message
      * @return decoded message
      */
-    private static String decodeMessage(byte[] message) {
+    public static String decodeMessage(byte[] message) {
 
         if (message.length < 4) {
             return null;
