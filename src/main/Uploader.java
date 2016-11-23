@@ -84,7 +84,7 @@ public class Uploader implements Runnable{
 				// If this was a thread already spawned from this class, we do not want it to spawn another thread
 				// That would be a thread within a thread within a thread, and it will go on forever
 				// We only want one layer of threads operating under the initial one that was created
-				if(!innerThread){
+				if(!innerThread && client != null){
 					makeThread(true);
 				}
 				

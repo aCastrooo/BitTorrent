@@ -99,8 +99,8 @@ public class Downloader implements Runnable {
 	public void run() {
 		try {
 			downloadFromPeer();
-			// 15 seconds to wait for other threads to finish
-			Thread.sleep(15000);
+			// 5 seconds to wait for other threads to finish
+			Thread.sleep(5000);
 			System.out.println(checkAllPieces());
 		} catch (Exception e) {
 			e.printStackTrace();

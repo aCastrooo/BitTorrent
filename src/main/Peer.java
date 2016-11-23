@@ -131,70 +131,81 @@ public class Peer {
         Timer interval = new Timer();
         interval.schedule(new IntervalTimer(torrent, pID, "", torrent.file_length-Downloader.downloadedPieces.length), 0, (long)Peer.interval);
 
-        // Starts new thread to wait on user input for 
+        // Starts new thread to wait on user input 
         Pause pp = new Pause();
         Thread p = new Thread(pp);
         p.start();
 
         byte[] combinedPieces = new byte[torrent.file_length];
 
-        // Join all the threads
-        joinThreads(threads);
-
-        
-        // If the user paused, write the file 
-        if(Pause.getPause()){
-           	// If the pause signal comes through, write the downloaded and verified pieces to the file
-            StringBuffer s = new StringBuffer();
-            for(int i = 0; i < Downloader.piecesDownloaded.size(); i++){
-            	if(Downloader.piecesDownloaded.get(i)){
-            		s.append("1");
-            		s.append(" ");
-            	}
-            	else{
-            		s.append("0");
-            		s.append(" ");
-            	}
-            }
-            
-            FileOutputStream writerArray = new FileOutputStream(Downloader.pauseDownName);
-            writerArray.write(s.toString().getBytes());
-            writerArray.close();
-        	FileOutputStream writer = new FileOutputStream(Downloader.pauseDataName);
-        	writer.write(Downloader.downloadedPieces);
-        	writer.close();		
+        // Keep looping until we hit the end
+        while(!Pause.getEnd()){
         	
-        	// Update the tracker that we stopped downloading
-        	Tracker.updateTracker(info, pID, "stopped", torrent.file_length - Downloader.downloadedPieces.length);
-        	
-        	System.out.println("The download is now paused.");
-        	System.out.println("To resume the download, type 'resume'.");
-        	System.out.println("To exit the client, type 'end'. All progress of the download will be saved.\n");
+        	Thread.sleep(15000);
+	        // If the user paused, write the file and wait on user input to unpause the client 
+	        if(Pause.paused){
+	        	
+	           	// If the pause signal comes through, write the downloaded and verified pieces to the file
+	            StringBuffer s = new StringBuffer();
+	            for(int i = 0; i < Downloader.piecesDownloaded.size(); i++){
+	            	if(Downloader.piecesDownloaded.get(i)){
+	            		s.append("1");
+	            		s.append(" ");
+	            	}
+	            	else{
+	            		s.append("0");
+	            		s.append(" ");
+	            	}
+	            }
+	            
+	            FileOutputStream writerArray = new FileOutputStream(Downloader.pauseDownName, false);
+	            writerArray.write(s.toString().getBytes());
+	            writerArray.close();
+	        	FileOutputStream writer = new FileOutputStream(Downloader.pauseDataName, false);
+	        	writer.write(Downloader.downloadedPieces);
+	        	writer.close();		
+	        	
+	        	// Update the tracker that we stopped downloading
+	        	Tracker.updateTracker(info, pID, "stopped", torrent.file_length - Downloader.downloadedPieces.length);
+	        	
+	        	System.out.println("The download is now paused.");
+	        	System.out.println("To resume the download, type 'resume'.");
+	        	System.out.println("To end the client, type 'end'. All progress of the download will be saved.\n");
+	
+		        // While the program is paused, we do nothing
+		        while(Pause.getPause()){   
+		        	
+		        	Thread.sleep(15000);
+		            // Checks if we are exiting, and if so, exiting before full completion of the file
+		            if(RUBTClient.checkIfPaused() && Pause.getPause() && Pause.getEnd()){
+		            	Tracker.updateTracker(info, pID, "stopped", torrent.file_length - Downloader.downloadedPieces.length);
+		            	p.interrupt();
+		            	initialUploader.interrupt();
+		            	return null;
+		            }
+		           
+		        }
+	        }
+	        
+	    	// Resuming the download
+	        if(Pause.getResume()){
+	        	Tracker.updateTracker(info, pID, "started", torrent.file_length - Downloader.downloadedPieces.length);
+	        	Pause.resume = false;
+	        	startRunning(piecesPerPeer, lastPeer, threads, downloads);
+	        }    
+	        
+	        // If all pieces are downloaded, we can exit
+	        if(Downloader.checkAllPieces()){
+		        System.out.println(Downloader.checkAllPieces());
+		        p.interrupt();
+	        	Pause.setEnd(true);
+	        	joinThreads(threads);
+	        }
 
         }
-
-        // While the program is paused, we do nothing
-        while(Pause.getPause()){                   
-            // Checks if we are exiting, and if so, exiting before full completion of the file
-            if(RUBTClient.checkIfPaused() && Pause.getPause() && Pause.getEnd()){
-            	Tracker.updateTracker(info, pID, "stopped", torrent.file_length - Downloader.downloadedPieces.length);
-            	initialUploader.interrupt();
-            	return null;
-            }
-           
-        }
         
-    	// Resuming the downlaod
-        if(Pause.getResume()){
-        	Tracker.updateTracker(info, pID, "started", torrent.file_length - Downloader.downloadedPieces.length);
-        	startRunning(piecesPerPeer, lastPeer, threads, downloads);
-        	joinThreads(threads);
-        }    
-
-
         // Return the total file in bytes
         combinedPieces = downloads.get(0).getPieces();
-        Pause.setEnd(true);
         initialUploader.interrupt();
         return combinedPieces;
 

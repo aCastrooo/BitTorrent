@@ -18,10 +18,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-public class Pause extends Thread {
+public class Pause implements Runnable {
 
-	private static boolean paused = false;
-	private static boolean resume = false;
+	public static boolean paused = false;
+	public static boolean resume = false;
 	public static boolean end = false;
 	
 	private String check = "";
@@ -56,12 +56,14 @@ public class Pause extends Thread {
 		
 	}
 
-	public static void setEnd(boolean end){
-		Pause.end = end;
-	}
+
 	
 	public static boolean getPause(){
 		return paused;
+	}
+	
+	public static void setResume(boolean resume){
+		Pause.resume = resume;
 	}
 	
 	
@@ -69,25 +71,14 @@ public class Pause extends Thread {
 		return resume;
 	}
 	
+	public static void setEnd(boolean end){
+		Pause.end = end;
+	}
 	
 	public static boolean getEnd(){
 		return end;
 	}
-	
-	
-	@Override
-	public void interrupt(){
-		try{
-			in.close();
-		} catch (IOException e) {
-			System.out.println("BLAH");
-			//super.interrupt();
-		}finally{
-			System.out.println("Inteerupting the thread");
-			super.interrupt();
-		}
-	}
-	
+
 	
 	
 }
