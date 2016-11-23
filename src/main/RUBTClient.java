@@ -112,7 +112,7 @@ public class RUBTClient {
         byte[] response = Tracker.getRequest(info, pID);
         if (response != null) {
             System.out.println("Tracker connection successful!   " + info.info_hash.array().length);
-        }
+        }        
         
     	if(resume){
     		System.out.println("Resuming download of " + info.file_name);
@@ -174,7 +174,7 @@ public class RUBTClient {
         			
         	System.out.println("Total time to download: " + minutesTO + " minutes " + (int)secondsTO + " seconds");
         }
-        
+               
         System.out.println("Client exiting.");
     	System.out.println("====================================================================\n");
         System.exit(0);

@@ -14,13 +14,13 @@
 
 package main;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import GivenTools.TorrentInfo;
@@ -28,6 +28,9 @@ import GivenTools.TorrentInfo;
 public class Uploader implements Runnable{
 
 	private ServerSocket sock;
+	private Socket client;
+	
+	private boolean innerThread;
 	
 	// Range of ports 6881 - 6889
 	private int port;
@@ -40,7 +43,15 @@ public class Uploader implements Runnable{
 	// Incoming handshake message
 	private byte[] incomingHandshake = new byte[49+Downloader.BT_PROTOCOL.length];
 	
-	private static final TorrentInfo torrent = Peer.getTorrent();
+	private static final TorrentInfo torrent = RUBTClient.info;
+	private static ArrayList<Thread> threads = new ArrayList<Thread>();
+	
+	
+	public Uploader(ServerSocket sock, Socket client, boolean innerThread){
+		this.sock = sock;
+		this.client = client;
+		this.innerThread = innerThread;
+	}
 	
 	
 	@Override
@@ -68,7 +79,14 @@ public class Uploader implements Runnable{
 				sock = new ServerSocket(port);
 				
 				// Client-side socket
-				Socket client = sock.accept();
+				client = sock.accept();
+				
+				// If this was a thread already spawned from this class, we do not want it to spawn another thread
+				// That would be a thread within a thread within a thread, and it will go on forever
+				// We only want one layer of threads operating under the initial one that was created
+				if(!innerThread){
+					makeThread(true);
+				}
 				
 				while(true){
 					in = client.getInputStream();
@@ -86,31 +104,76 @@ public class Uploader implements Runnable{
 						break;
 					}
 					
+					// If the user closed the client, we must stop all running threads, and close connections
+					if(Pause.getEnd()){
+						closeInnerThreads(threads);
+						return;
+					}
+					
 				}
 			}
 			catch(IOException e){
 				port++;
 				continue;
 			}
-			
-			
+
 		}
-		
 		return;
-	
 	}
 
+
 	
+	
+	
+	private synchronized void makeThread(boolean b) {
+		Uploader up = new Uploader(sock, client, b);
+		if(b){
+			return;
+		}
+		else{
+			Thread t = new Thread(up);
+			t.start();
+			threads.add(t);
+		}
+		
+	}
+
+
+	private synchronized void closeInnerThreads(ArrayList<Thread> threads2) {
+		for(Thread thread : threads){
+			thread.interrupt();
+		}
+	}
+
+
 	private synchronized boolean getRequestMessage(Socket client) {
 		try {
 			in.read(incomingMessage);
 			
-			if(incomingMessage.length != 13){
+			if(incomingMessage.length != 17){
 				// This is not the request message
 				return false;
 			}
 			else{
-				
+				if(Downloader.decodeMessage(incomingMessage).equals("request")){
+					// If request is legit, get the piece
+					byte[] index = new byte[4];
+					byte[] offset = new byte[4];
+					byte[] length = new byte[4];
+					System.arraycopy(incomingMessage, 5, index, 0, 4);
+					System.arraycopy(incomingMessage, 9, offset, 0, 4);
+					System.arraycopy(incomingMessage, 13, length, 0, 4);
+					int i = ByteBuffer.wrap(index).getInt();
+					int o = ByteBuffer.wrap(offset).getInt();
+					int pieceLength = ByteBuffer.wrap(length).getInt();
+					
+					if(getRequestedPiece(i, o, pieceLength)){
+						return true;
+					}
+					else{
+						return false;
+					}
+				}
 			}
 			
 			
@@ -118,17 +181,34 @@ public class Uploader implements Runnable{
 			e.printStackTrace();
 			return false;
 		}
-		
-		
-		
-		
-		
 		return false;
 	}
 
 
 
 
+
+
+
+	private synchronized boolean getRequestedPiece(int i, int o, int pieceLength){
+
+		// Check if we have that piece before uploading
+		if(!Downloader.piecesDownloaded.get(i)){
+			return false;
+		}
+		else{
+			try{
+				// Make the piece message
+				byte[] pieceMessage = Downloader.makeMessage(9+pieceLength, 7, 13+pieceLength, i, o, pieceLength);
+				// Send the requested piece
+				out.write(pieceMessage);
+				return true;
+			}catch(Exception e){
+				e.printStackTrace();
+				return false;
+			}
+		}
+	}
 
 
 
@@ -146,6 +226,7 @@ public class Uploader implements Runnable{
 			}else{
 				
 				if(Downloader.decodeMessage(incomingMessage).equals("interested")){
+					// Send the unchoke message
 					out.write(Downloader.makeMessage(1, 1, 5, -1, -1, -1));
 					return true;
 				}

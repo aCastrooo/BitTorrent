@@ -19,6 +19,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.UnsupportedEncodingException;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -59,6 +61,9 @@ public class Peer {
 
     // Interval in which to contact the tracker to update the file
     public static int interval;
+    
+    private static ServerSocket sock;
+    private static Socket client;
     	
     
     
@@ -102,6 +107,11 @@ public class Peer {
         	Tracker.updateTracker(torrent, pID, "started", -1);
         }
         
+        // Start the uploading
+        Uploader up = new Uploader(sock, client, false);
+        Thread initialUploader = new Thread(up);
+        initialUploader.start();
+        
         
         // Add the peers we need to the fast peers list
         for(int i = 0; i < peers.size(); i++){
@@ -131,6 +141,7 @@ public class Peer {
         // Join all the threads
         joinThreads(threads);
 
+        
         // If the user paused, write the file 
         if(Pause.getPause()){
            	// If the pause signal comes through, write the downloaded and verified pieces to the file
@@ -167,6 +178,7 @@ public class Peer {
             // Checks if we are exiting, and if so, exiting before full completion of the file
             if(RUBTClient.checkIfPaused() && Pause.getPause() && Pause.getEnd()){
             	Tracker.updateTracker(info, pID, "stopped", torrent.file_length - Downloader.downloadedPieces.length);
+            	initialUploader.interrupt();
             	return null;
             }
            
@@ -182,6 +194,8 @@ public class Peer {
 
         // Return the total file in bytes
         combinedPieces = downloads.get(0).getPieces();
+        Pause.setEnd(true);
+        initialUploader.interrupt();
         return combinedPieces;
 
     }

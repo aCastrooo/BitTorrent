@@ -22,7 +22,7 @@ public class Pause extends Thread {
 
 	private static boolean paused = false;
 	private static boolean resume = false;
-	private static boolean end = false;
+	public static boolean end = false;
 	
 	private String check = "";
 	private BufferedReader in;
@@ -56,6 +56,9 @@ public class Pause extends Thread {
 		
 	}
 
+	public static void setEnd(boolean end){
+		Pause.end = end;
+	}
 	
 	public static boolean getPause(){
 		return paused;
